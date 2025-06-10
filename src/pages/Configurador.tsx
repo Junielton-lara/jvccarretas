@@ -79,83 +79,144 @@ const Configurador = () => {
   const generatePDF = () => {
     const doc = new jsPDF();
     
-    // Header
-    doc.setFontSize(20);
+    // Header com logo (simulado)
+    doc.setFillColor(0, 0, 0);
+    doc.rect(0, 0, 210, 35, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
     doc.text('JVC CARRETAS', 105, 20, { align: 'center' });
-    doc.setFontSize(16);
-    doc.text('CONFIGURAÇÃO JET PREMIUM', 105, 30, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text('CONFIGURAÇÃO JET PREMIUM', 105, 28, { align: 'center' });
+    
+    doc.setTextColor(0, 0, 0);
     
     let yPosition = 50;
-    const lineHeight = 7;
+    const leftColumn = 20;
+    const rightColumn = 110;
+    const lineHeight = 6;
     
-    // Helper function to add text
-    const addText = (label: string, value: string | string[]) => {
-      if (yPosition > 280) {
-        doc.addPage();
-        yPosition = 20;
-      }
-      doc.setFontSize(10);
-      const text = Array.isArray(value) ? value.join(', ') : value;
-      doc.text(`${label}: ${text}`, 20, yPosition);
-      yPosition += lineHeight;
+    // Helper function to add section header
+    const addSectionHeader = (title: string, y: number) => {
+      doc.setFillColor(230, 6, 19);
+      doc.rect(20, y - 4, 170, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.text(title, 22, y + 1);
+      doc.setTextColor(0, 0, 0);
+      return y + 12;
     };
 
-    // Add form data to PDF
-    addText('CHASSI', formData.chassi);
-    addText('ALUMÍNIO', formData.aluminioOpcoes);
-    addText('COR DO ALUMÍNIO', formData.corAluminio);
-    addText('BERÇO', formData.berco);
-    addText('ACESSÓRIOS', formData.acessorios);
-    addText('PINTURA DA CARRETA', formData.pinturaCarreta);
-    addText('PÁRA-LAMA', formData.paraLama);
-    addText('RODA', formData.roda);
-    addText('ARO', formData.aro);
-    addText('PNEU', formData.pneu);
+    // Helper function to add field in columns
+    const addField = (label: string, value: string | string[], x: number, y: number) => {
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${label}:`, x, y);
+      doc.setFont(undefined, 'normal');
+      const text = Array.isArray(value) ? value.join(', ') : value;
+      const maxWidth = 80;
+      const splitText = doc.splitTextToSize(text || 'Não informado', maxWidth);
+      doc.text(splitText, x, y + 4);
+      return y + (splitText.length * 4) + 6;
+    };
+
+    // DADOS DO CLIENTE
+    yPosition = addSectionHeader('DADOS DO CLIENTE', yPosition);
+    let leftY = yPosition;
+    let rightY = yPosition;
     
-    // Adesivos
+    leftY = addField('CLIENTE', formData.cliente, leftColumn, leftY);
+    rightY = addField('CIDADE', formData.cidade, rightColumn, rightY);
+    leftY = addField('DATA DE ENTREGA', formData.dataEntrega, leftColumn, leftY);
+    
+    yPosition = Math.max(leftY, rightY) + 8;
+
+    // ESPECIFICAÇÕES TÉCNICAS
+    yPosition = addSectionHeader('ESPECIFICAÇÕES TÉCNICAS', yPosition);
+    leftY = yPosition;
+    rightY = yPosition;
+    
+    leftY = addField('CHASSI', formData.chassi, leftColumn, leftY);
+    rightY = addField('BERÇO', formData.berco, rightColumn, rightY);
+    leftY = addField('RODA', formData.roda, leftColumn, leftY);
+    rightY = addField('ARO', formData.aro, rightColumn, rightY);
+    leftY = addField('PNEU', formData.pneu, leftColumn, leftY);
+    
+    yPosition = Math.max(leftY, rightY) + 8;
+
+    // ALUMÍNIO E PINTURA
+    yPosition = addSectionHeader('ALUMÍNIO E PINTURA', yPosition);
+    leftY = yPosition;
+    rightY = yPosition;
+    
+    leftY = addField('ALUMÍNIO', formData.aluminioOpcoes, leftColumn, leftY);
+    rightY = addField('COR DO ALUMÍNIO', formData.corAluminio, rightColumn, rightY);
+    leftY = addField('PINTURA DA CARRETA', formData.pinturaCarreta, leftColumn, leftY);
+    rightY = addField('PÁRA-LAMA', formData.paraLama, rightColumn, rightY);
+    
+    yPosition = Math.max(leftY, rightY) + 8;
+
+    // ACESSÓRIOS
+    yPosition = addSectionHeader('ACESSÓRIOS', yPosition);
+    yPosition = addField('ACESSÓRIOS', formData.acessorios, leftColumn, yPosition) + 4;
+
+    // ADESIVOS
+    yPosition = addSectionHeader('ADESIVOS', yPosition);
+    leftY = yPosition;
+    rightY = yPosition;
+    
     const adesivos = [];
     if (formData.adesivos18mm) adesivos.push('18mm');
     if (formData.adesivos5mm) adesivos.push('5mm');
-    addText('ADESIVOS', adesivos);
-    addText('COR ADESIVOS', formData.adesivosCor);
-    addText('DETALHE', formData.adesivosDetalhe);
-    addText('PÁRA-LAMA', formData.adesivosParaLama);
-    addText('NOMES', formData.adesivosNomes);
-    addText('OUTROS', formData.adesivosOutros);
     
-    // Colaboradores
-    yPosition += 10;
-    doc.setFontSize(12);
-    doc.text('COLABORADORES', 20, yPosition);
-    yPosition += 10;
-    addText('SUSPENSÃO', formData.suspensao);
-    addText('ELÉTRICA', formData.eletrica);
-    addText('PLOTAGEM', formData.plotagem);
-    addText('MONTAGEM', formData.montagem);
-    addText('CHECKLIST', formData.checklist);
+    leftY = addField('TIPO', adesivos, leftColumn, leftY);
+    rightY = addField('COR', formData.adesivosCor, rightColumn, rightY);
+    leftY = addField('DETALHE', formData.adesivosDetalhe, leftColumn, leftY);
+    rightY = addField('PÁRA-LAMA', formData.adesivosParaLama, rightColumn, rightY);
+    leftY = addField('NOMES', formData.adesivosNomes, leftColumn, leftY);
+    rightY = addField('OUTROS', formData.adesivosOutros, rightColumn, rightY);
     
-    // Dados
-    yPosition += 10;
-    doc.setFontSize(12);
-    doc.text('DADOS', 20, yPosition);
-    yPosition += 10;
-    addText('CLIENTE', formData.cliente);
-    addText('DATA DE ENTREGA', formData.dataEntrega);
-    addText('CIDADE', formData.cidade);
-    
-    // Observação
-    if (formData.observacao) {
-      yPosition += 10;
-      doc.setFontSize(12);
-      doc.text('OBSERVAÇÃO', 20, yPosition);
-      yPosition += 10;
-      doc.setFontSize(10);
-      const splitText = doc.splitTextToSize(formData.observacao, 170);
-      doc.text(splitText, 20, yPosition);
+    yPosition = Math.max(leftY, rightY) + 8;
+
+    // Check if we need a new page
+    if (yPosition > 250) {
+      doc.addPage();
+      yPosition = 30;
     }
+
+    // COLABORADORES
+    yPosition = addSectionHeader('COLABORADORES RESPONSÁVEIS', yPosition);
+    leftY = yPosition;
+    rightY = yPosition;
+    
+    leftY = addField('SUSPENSÃO', formData.suspensao, leftColumn, leftY);
+    rightY = addField('ELÉTRICA', formData.eletrica, rightColumn, rightY);
+    leftY = addField('PLOTAGEM', formData.plotagem, leftColumn, leftY);
+    rightY = addField('MONTAGEM', formData.montagem, rightColumn, rightY);
+    leftY = addField('CHECKLIST', formData.checklist, leftColumn, leftY);
+    
+    yPosition = Math.max(leftY, rightY) + 8;
+
+    // OBSERVAÇÕES
+    if (formData.observacao) {
+      yPosition = addSectionHeader('OBSERVAÇÕES', yPosition);
+      doc.setFontSize(9);
+      const splitObservacao = doc.splitTextToSize(formData.observacao, 170);
+      doc.text(splitObservacao, leftColumn, yPosition);
+      yPosition += splitObservacao.length * 4 + 8;
+    }
+
+    // Footer
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setFillColor(0, 0, 0);
+    doc.rect(0, pageHeight - 20, 210, 20, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text('JVC Carretas - Qualidade que transmite segurança', 105, pageHeight - 12, { align: 'center' });
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 105, pageHeight - 6, { align: 'center' });
     
     // Save PDF
-    doc.save('configuracao-jvc-carretas.pdf');
+    doc.save(`configuracao-jvc-carretas-${formData.cliente || 'cliente'}.pdf`);
   };
 
   return (
