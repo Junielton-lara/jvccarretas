@@ -79,45 +79,45 @@ const Configurador = () => {
   const generatePDF = () => {
     const doc = new jsPDF();
     
-    // Header com logo (simulado)
+    // Header com logo (menor)
     doc.setFillColor(0, 0, 0);
-    doc.rect(0, 0, 210, 35, 'F');
+    doc.rect(0, 0, 210, 25, 'F');
     
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.text('JVC CARRETAS', 105, 20, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text('CONFIGURAÇÃO JET PREMIUM', 105, 28, { align: 'center' });
+    doc.setFontSize(18);
+    doc.text('JVC CARRETAS', 105, 12, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text('CONFIGURAÇÃO JET PREMIUM', 105, 20, { align: 'center' });
     
     doc.setTextColor(0, 0, 0);
     
-    let yPosition = 50;
-    const leftColumn = 20;
+    let yPosition = 35;
+    const leftColumn = 15;
     const rightColumn = 110;
-    const lineHeight = 6;
+    const lineHeight = 4;
     
-    // Helper function to add section header
+    // Helper function to add section header (menor)
     const addSectionHeader = (title: string, y: number) => {
       doc.setFillColor(230, 6, 19);
-      doc.rect(20, y - 4, 170, 8, 'F');
+      doc.rect(15, y - 2, 180, 6, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(11);
-      doc.text(title, 22, y + 1);
+      doc.setFontSize(9);
+      doc.text(title, 16, y + 2);
       doc.setTextColor(0, 0, 0);
-      return y + 12;
+      return y + 8;
     };
 
-    // Helper function to add field in columns
+    // Helper function to add field in columns (mais compacto)
     const addField = (label: string, value: string | string[], x: number, y: number) => {
-      doc.setFontSize(9);
+      doc.setFontSize(7);
       doc.setFont(undefined, 'bold');
       doc.text(`${label}:`, x, y);
       doc.setFont(undefined, 'normal');
       const text = Array.isArray(value) ? value.join(', ') : value;
-      const maxWidth = 80;
+      const maxWidth = 85;
       const splitText = doc.splitTextToSize(text || 'Não informado', maxWidth);
-      doc.text(splitText, x, y + 4);
-      return y + (splitText.length * 4) + 6;
+      doc.text(splitText, x, y + 2);
+      return y + Math.max(splitText.length * 2, 3) + 2;
     };
 
     // DADOS DO CLIENTE
@@ -129,7 +129,7 @@ const Configurador = () => {
     rightY = addField('CIDADE', formData.cidade, rightColumn, rightY);
     leftY = addField('DATA DE ENTREGA', formData.dataEntrega, leftColumn, leftY);
     
-    yPosition = Math.max(leftY, rightY) + 8;
+    yPosition = Math.max(leftY, rightY) + 3;
 
     // ESPECIFICAÇÕES TÉCNICAS
     yPosition = addSectionHeader('ESPECIFICAÇÕES TÉCNICAS', yPosition);
@@ -142,7 +142,7 @@ const Configurador = () => {
     rightY = addField('ARO', formData.aro, rightColumn, rightY);
     leftY = addField('PNEU', formData.pneu, leftColumn, leftY);
     
-    yPosition = Math.max(leftY, rightY) + 8;
+    yPosition = Math.max(leftY, rightY) + 3;
 
     // ALUMÍNIO E PINTURA
     yPosition = addSectionHeader('ALUMÍNIO E PINTURA', yPosition);
@@ -154,11 +154,11 @@ const Configurador = () => {
     leftY = addField('PINTURA DA CARRETA', formData.pinturaCarreta, leftColumn, leftY);
     rightY = addField('PÁRA-LAMA', formData.paraLama, rightColumn, rightY);
     
-    yPosition = Math.max(leftY, rightY) + 8;
+    yPosition = Math.max(leftY, rightY) + 3;
 
     // ACESSÓRIOS
     yPosition = addSectionHeader('ACESSÓRIOS', yPosition);
-    yPosition = addField('ACESSÓRIOS', formData.acessorios, leftColumn, yPosition) + 4;
+    yPosition = addField('ACESSÓRIOS', formData.acessorios, leftColumn, yPosition) + 2;
 
     // ADESIVOS
     yPosition = addSectionHeader('ADESIVOS', yPosition);
@@ -176,13 +176,7 @@ const Configurador = () => {
     leftY = addField('NOMES', formData.adesivosNomes, leftColumn, leftY);
     rightY = addField('OUTROS', formData.adesivosOutros, rightColumn, rightY);
     
-    yPosition = Math.max(leftY, rightY) + 8;
-
-    // Check if we need a new page
-    if (yPosition > 250) {
-      doc.addPage();
-      yPosition = 30;
-    }
+    yPosition = Math.max(leftY, rightY) + 3;
 
     // COLABORADORES
     yPosition = addSectionHeader('COLABORADORES RESPONSÁVEIS', yPosition);
@@ -195,25 +189,33 @@ const Configurador = () => {
     rightY = addField('MONTAGEM', formData.montagem, rightColumn, rightY);
     leftY = addField('CHECKLIST', formData.checklist, leftColumn, leftY);
     
-    yPosition = Math.max(leftY, rightY) + 8;
+    yPosition = Math.max(leftY, rightY) + 3;
 
-    // OBSERVAÇÕES
-    if (formData.observacao) {
+    // OBSERVAÇÕES (se houver espaço)
+    if (formData.observacao && yPosition < 250) {
       yPosition = addSectionHeader('OBSERVAÇÕES', yPosition);
-      doc.setFontSize(9);
-      const splitObservacao = doc.splitTextToSize(formData.observacao, 170);
+      doc.setFontSize(7);
+      const maxObsWidth = 180;
+      const remainingSpace = 270 - yPosition;
+      const maxLines = Math.floor(remainingSpace / 2);
+      let splitObservacao = doc.splitTextToSize(formData.observacao, maxObsWidth);
+      
+      if (splitObservacao.length > maxLines) {
+        splitObservacao = splitObservacao.slice(0, maxLines - 1);
+        splitObservacao.push('...');
+      }
+      
       doc.text(splitObservacao, leftColumn, yPosition);
-      yPosition += splitObservacao.length * 4 + 8;
     }
 
-    // Footer
+    // Footer compacto
     const pageHeight = doc.internal.pageSize.height;
     doc.setFillColor(0, 0, 0);
-    doc.rect(0, pageHeight - 20, 210, 20, 'F');
+    doc.rect(0, pageHeight - 12, 210, 12, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8);
-    doc.text('JVC Carretas - Qualidade que transmite segurança', 105, pageHeight - 12, { align: 'center' });
-    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 105, pageHeight - 6, { align: 'center' });
+    doc.setFontSize(7);
+    doc.text('JVC Carretas - Qualidade que transmite segurança', 105, pageHeight - 8, { align: 'center' });
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 105, pageHeight - 3, { align: 'center' });
     
     // Save PDF
     doc.save(`configuracao-jvc-carretas-${formData.cliente || 'cliente'}.pdf`);
